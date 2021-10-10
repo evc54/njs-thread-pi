@@ -1,0 +1,16 @@
+{
+  "name": "njs-thread-pi",
+  "version": "0.0.1",
+  "description": "Node.js threads are easy",
+  "main": "main.js",
+  "author": "Eugene V Chernyshev <evc22rus@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/evc54/njs-thread-pi"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^8.2.0",
+    "progress": "^2.0.3"
+  }
+}
