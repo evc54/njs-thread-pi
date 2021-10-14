@@ -1,7 +1,7 @@
 const { isMainThread, parentPort } = require('worker_threads');
 const fs = require('fs');
 
-if (isMainThread) throw Error('This script must be executed as thread worker');
+if (isMainThread) throw new Error('This script must be executed as thread worker');
 
 const pi = require('./utils/bellard');
 

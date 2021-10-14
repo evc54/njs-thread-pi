@@ -7,18 +7,20 @@ const { Worker } = require('worker_threads');
 
 const DEFAULT_POOL_SIZE = 4; // a number of workers by default
 const MAX_POOL_SIZE = os.cpus().length; // a number of CPU cores
-const CHUNK_SIZE = 10; // chunk size
+const DEFAULT_CHUNK_SIZE = 10; // default chunk size
+const MAX_CHUNK_SIZE = 15; // max. chunk size
 const DEFAULT_FILE_NAME = 'pi.txt';
 
 const pool = []; // worker pool
 const tasks = []; // calculation tasks
-let precision, results, filename, started, progressBar;
+let precision, chunkSize, results, filename, started, progressBar;
 
 //
 // run a program via commander
 //
 program
-  .option('-w, --workers <number>', 'a number of thread workers', parseInt)
+  .option('-w, --workers <number>', 'a number of thread workers', n => parseInt(n, 10), DEFAULT_POOL_SIZE)
+  .option('-c, --chunk <number>', 'digits chunk size', n => parseInt(n, 10), DEFAULT_CHUNK_SIZE)
   .option('-f, --file <name>', 'file name to save results as text', DEFAULT_FILE_NAME)
   .argument('<precision>', 'Pi constant precision to calculate', parseInt)
   .action(precision => {
@@ -27,9 +29,9 @@ program
       return program.help();
     }
 
-    const { workers = DEFAULT_POOL_SIZE, file } = program.opts();
+    const { workers, chunk, file } = program.opts();
     filename = file;
-    start(precision, workers);
+    start(precision, chunk, workers);
   });
 program.showHelpAfterError();
 program.parse();
@@ -37,8 +39,13 @@ program.parse();
 //
 // add tasks and spawn workers
 //
-function start(desiredPrecision, workerPoolSize) {
+function start(desiredPrecision, desiredChunkSize, workerPoolSize) {
+  // set precision to calc
   precision = desiredPrecision;
+
+  // set chunk size
+  chunkSize = Math.max(1, Math.min(desiredChunkSize, MAX_CHUNK_SIZE));
+  console.log(`* chunk size is set to ${chunkSize}`);
 
   // make result array
   results = new Int8Array(precision + 2);
@@ -46,10 +53,13 @@ function start(desiredPrecision, workerPoolSize) {
   results[1] = 46; // '.'
 
   // add computation tasks
-  for (let i = precision / CHUNK_SIZE; i >= 0; i--) {
+  for (let i = Math.ceil(precision / chunkSize); i >= 0; i--) {
     tasks.push({
       id: i, // task id used to calculate results array position
-      params: [i * 10 + 1], // digits chunk offset
+      params: [
+        i * chunkSize + 1,  // digits chunk offset
+        chunkSize, // chunk size
+      ],
     });
   }
 
@@ -112,8 +122,8 @@ function onMessage(worker) {
       case 'result': // worker sends a result
         const { id, result } = message;
         const digits = `${result}`.split('').reverse();
-        for (let i = 0; i < CHUNK_SIZE; i++) {
-          const index = id * CHUNK_SIZE + CHUNK_SIZE - i + 1; // result array index for the digit
+        for (let i = 0; i < chunkSize; i++) {
+          const index = id * chunkSize + chunkSize - i + 1; // result array index for the digit
           results[index] = digits[i] ? +digits[i] + 48 : 48; // convert to ascii code
         }
         progressBar.tick();

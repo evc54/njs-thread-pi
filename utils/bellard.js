@@ -62,8 +62,8 @@ function getNextPrime(n) {
   return n;
 }
 
-/* calculate nth numbers of Pi const */
-function piNth(n) {
+/* calculate `x` numbers at offset `n` */
+function piNth(n, x = 10) {
   let N = (n + 20) * Math.log(10) / Math.log(2);
   let sum = 0;
   for (let a = 3; a <= 2 * N; a = getNextPrime(a)) {
@@ -116,7 +116,7 @@ function piNth(n) {
     sum = (sum + s / av) % 1;
   }
 
-  return Math.floor(sum * 10 ** 10);
+  return Math.floor(sum * 10 ** x);
 }
 
 module.exports = piNth;
